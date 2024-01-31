@@ -1,0 +1,6 @@
+main
+.ccls-cache/
+old/
+.replit
+replit.nix
+.cache/
