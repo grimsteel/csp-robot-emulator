@@ -2,6 +2,8 @@
 #include "compiler.h"
 #include "scanner.h"
 
+#include <stdio.h>
+
 void compile(const char* source) {
   initScanner(source);
 

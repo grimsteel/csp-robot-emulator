@@ -2,6 +2,7 @@
 #include "vm.h"
 #include "value.h"
 #include "debug.h"
+#include "compiler.h"
 #include <stdio.h>
 
 VM vm;
