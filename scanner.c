@@ -109,7 +109,12 @@ static TokenType getIdentType() {
         else if (scanner.start[1] == 'A') return checkKeyword(2, 3, "LSE", TOKEN_FALSE);
       }
       break;
-    case 'I': return checkKeyword(1, 1, "F", TOKEN_IF);
+    case 'I':
+      if (length == 2) {
+        if (scanner.start[1] == 'F') return TOKEN_IF;
+        else if (scanner.start[1] == 'N') return TOKEN_IN;
+      }
+      break;
     case 'M': return checkKeyword(1, 2, "OD", TOKEN_MOD);
     case 'N': return checkKeyword(1, 2, "OT", TOKEN_NOT);
     case 'O': return checkKeyword(1, 1, "R", TOKEN_OR);
