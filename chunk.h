@@ -11,6 +11,8 @@ typedef enum {
   OP_SUBTRACT,
   OP_DIVIDE,
   OP_MULTIPLY,
+  OP_TRUE,
+  OP_FALSE
 } OpCode;
 
 // Dynamic array of bytes

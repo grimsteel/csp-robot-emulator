@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "compiler.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 VM vm;
 
@@ -19,15 +20,32 @@ void freeVM() {
 
 }
 
+/// Return value without popping
+static Value peek(int distance) {
+  return vm.stackTop[-1 - distance];
+}
+
+static void runtimeError(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+}
+
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-#define BINARY_OP(op) \
+#define BINARY_OP(valueType, op) \
   do { \
-    double b = popStack(); \
-    double a = popStack(); \
-    pushStack(a op b); \
-  } while (false) // block macro trick
+    if (peek(0).type != VAL_NUMBER || peek(1).type != VAL_NUMBER) { \
+      runtimeError("Both operands must be numbers."); \
+      return INTERPRET_RUNTIME_ERR; \
+    } \
+    double b = popStack().as.number; \
+    double a = popStack().as.number; \
+    pushStack(valueType(a op b)); \
+  } while (false)
 
   while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -56,11 +74,18 @@ static InterpretResult run() {
         printValue(popStack());
         printf("\n");
         return INTERPRET_OK;
-      case OP_NEGATE: pushStack(-popStack()); break;
-      case OP_ADD: BINARY_OP(+); break;
-      case OP_SUBTRACT: BINARY_OP(-); break;
-      case OP_MULTIPLY: BINARY_OP(*); break;
-      case OP_DIVIDE: BINARY_OP(/); break;
+      case OP_NEGATE:
+        // needs to be a number
+        if (peek(0).type != VAL_NUMBER) {
+          runtimeError("Operand must be a number.");
+          return INTERPRET_RUNTIME_ERR;
+        }
+        pushStack(NUMBER_VAL(-popStack().as.number));
+        break;
+      case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
+      case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
+      case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
+      case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
       default:
         break;
     }

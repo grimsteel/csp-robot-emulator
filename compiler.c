@@ -132,7 +132,12 @@ static void parsePrecedence(Precedence precedence);
 static void number() {
   double value = strtod(parser.previous.start, NULL);
   emitByte(OP_CONSTANT);
-  emitByte(makeConstant(value));
+  emitByte(makeConstant(NUMBER_VAL(value)));
+}
+
+static void boolean() {
+  // Booleans are ops rather than vals at this stage for efficiency
+  emitByte(parser.previous.type == TOKEN_TRUE ? OP_TRUE : OP_FALSE);
 }
 
 static void expression() {
@@ -193,11 +198,14 @@ ParseRule rules[] = {
   [TOKEN_IDENT] = {NULL, NULL, PREC_NONE},
   [TOKEN_STRING] = {NULL, NULL, PREC_NONE},
   // Prefix because this is parsed in the prefix stage
-  [TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
+  [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
 
   [TOKEN_AND] = {NULL, NULL, PREC_NONE},
   [TOKEN_OR] = {NULL, NULL, PREC_NONE},
   [TOKEN_NOT] = {NULL, NULL, PREC_NONE},
+
+  [TOKEN_TRUE] = {boolean, NULL, PREC_NONE},
+  [TOKEN_FALSE] = {boolean, NULL, PREC_NONE}
 };
 
 static void parsePrecedence(Precedence precedence) {
