@@ -43,6 +43,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return singleInstruction("OP_RETURN", offset);
     case OP_NEGATE:
       return singleInstruction("OP_NEGATE", offset);
+    case OP_TRUE:
+      return singleInstruction("OP_TRUE", offset);
+    case OP_FALSE:
+      return singleInstruction("OP_FALSE", offset);
+    case OP_NOT:
+      return singleInstruction("OP_NOT", offset);
     case OP_ADD:
       return singleInstruction("OP_ADD", offset);
     case OP_SUBTRACT:

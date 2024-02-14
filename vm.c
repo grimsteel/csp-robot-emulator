@@ -25,6 +25,18 @@ static Value peek(int distance) {
   return vm.stackTop[-1 - distance];
 }
 
+static bool isFalsy(Value value) {
+  switch (value.type) {
+    case VAL_NUMBER:
+      return value.as.number == 0.0;
+    case VAL_BOOLEAN:
+      return value.as.boolean == false;
+    case VAL_STRING:
+      // TODO: string length
+      return false;
+  }
+}
+
 static void runtimeError(const char* format, ...) {
   va_list args;
   va_start(args, format);
@@ -82,6 +94,9 @@ static InterpretResult run() {
         }
         pushStack(NUMBER_VAL(-popStack().as.number));
         break;
+      case OP_TRUE: pushStack(BOOLEAN_VAL(true)); break;
+      case OP_FALSE: pushStack(BOOLEAN_VAL(false)); break;
+      case OP_NOT: pushStack(BOOLEAN_VAL(isFalsy(popStack()))); break;
       case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
       case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;

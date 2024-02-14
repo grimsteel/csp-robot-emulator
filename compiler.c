@@ -152,6 +152,7 @@ static void unary() {
 
   switch (operatorType) {
     case TOKEN_MINUS: emitByte(OP_NEGATE); break;
+    case TOKEN_NOT: emitByte(OP_NOT); break;
     default: return;
   }
 }
@@ -202,7 +203,7 @@ ParseRule rules[] = {
 
   [TOKEN_AND] = {NULL, NULL, PREC_NONE},
   [TOKEN_OR] = {NULL, NULL, PREC_NONE},
-  [TOKEN_NOT] = {NULL, NULL, PREC_NONE},
+  [TOKEN_NOT] = {unary, NULL, PREC_NONE},
 
   [TOKEN_TRUE] = {boolean, NULL, PREC_NONE},
   [TOKEN_FALSE] = {boolean, NULL, PREC_NONE}
