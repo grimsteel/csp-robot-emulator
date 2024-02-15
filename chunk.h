@@ -9,11 +9,17 @@ typedef enum {
   OP_NEGATE,
   OP_ADD,
   OP_SUBTRACT,
-  OP_DIVIDE,
-  OP_NOT,
   OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_EQUAL,
+  OP_GREATER,
+  OP_LESS,
+  OP_AND,
+  OP_OR,
+  OP_NOT,
   OP_TRUE,
-  OP_FALSE
+  OP_FALSE,
+  OP_MOD
 } OpCode;
 
 // Dynamic array of bytes

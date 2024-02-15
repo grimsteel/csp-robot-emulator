@@ -1,7 +1,9 @@
 #include "value.h"
+#include "strobj.h"
 #include "mem.h"
 
 #include <stdio.h>
+#include <string.h>
 
 void initValueArray(ValueArray* valueArray) {
   valueArray->count = 0;
@@ -34,7 +36,34 @@ void printValue(Value value) {
       printf("%g", value.as.number);
       break;
     case VAL_STRING:
-      printf("%s", value.as.string);
+      printf("%s", value.as.string->chars);
       break;
+  }
+}
+
+bool isFalsy(Value value) {
+  switch (value.type) {
+    case VAL_NUMBER:
+      return value.as.number == 0.0;
+    case VAL_BOOLEAN:
+      return value.as.boolean == false;
+    case VAL_STRING:
+      return value.as.string->length == 0;
+  }
+}
+
+bool valuesEqual(Value a, Value b) {
+  if (a.type != b.type) return false;
+
+  switch (a.type) {
+    case VAL_NUMBER:
+      return a.as.number == b.as.number;
+    case VAL_BOOLEAN:
+      return a.as.boolean == b.as.boolean;
+    case VAL_STRING: {
+      String* aString = a.as.string;
+      String* bString = b.as.string;
+      return aString->length == bString->length && memcmp(aString->chars, bString->chars, aString->length) == 0;
+    }
   }
 }

@@ -5,6 +5,7 @@
 #include "compiler.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <math.h>
 
 VM vm;
 
@@ -25,18 +26,6 @@ static Value peek(int distance) {
   return vm.stackTop[-1 - distance];
 }
 
-static bool isFalsy(Value value) {
-  switch (value.type) {
-    case VAL_NUMBER:
-      return value.as.number == 0.0;
-    case VAL_BOOLEAN:
-      return value.as.boolean == false;
-    case VAL_STRING:
-      // TODO: string length
-      return false;
-  }
-}
-
 static void runtimeError(const char* format, ...) {
   va_list args;
   va_start(args, format);
@@ -48,6 +37,8 @@ static void runtimeError(const char* format, ...) {
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+// Binary op between **two numbers**. valueType defines output
+// (Will be number for arithmetic ops, bool for comparative ops)
 #define BINARY_OP(valueType, op) \
   do { \
     if (peek(0).type != VAL_NUMBER || peek(1).type != VAL_NUMBER) { \
@@ -97,10 +88,43 @@ static InterpretResult run() {
       case OP_TRUE: pushStack(BOOLEAN_VAL(true)); break;
       case OP_FALSE: pushStack(BOOLEAN_VAL(false)); break;
       case OP_NOT: pushStack(BOOLEAN_VAL(isFalsy(popStack()))); break;
+      case OP_LESS: BINARY_OP(BOOLEAN_VAL, <); break;
+      case OP_GREATER: BINARY_OP(BOOLEAN_VAL, >); break;
+      case OP_AND: {
+        // A AND B == !(!A OR !B)
+        bool b = isFalsy(popStack());
+        bool a = isFalsy(popStack());
+        pushStack(BOOLEAN_VAL(!(a || b)));
+        break;
+      }
+      case OP_OR: {
+        // A OR B == !(!A AND !B)
+        bool b = isFalsy(popStack());
+        bool a = isFalsy(popStack());
+        pushStack(BOOLEAN_VAL(!(a && b)));
+        break;
+      }
+      case OP_EQUAL: {
+        Value b = popStack();
+        Value a = popStack();
+        pushStack(BOOLEAN_VAL(valuesEqual(a, b)));
+        break;
+      }
       case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
       case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
       case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+      case OP_MOD: {
+        // Mod is different bc we can't use built in '%' operator
+        if (peek(0).type != VAL_NUMBER || peek(1).type != VAL_NUMBER) {
+          runtimeError("Both operands must be numbers.");
+          return INTERPRET_RUNTIME_ERR;
+        }
+        double b = popStack().as.number;
+        double a = popStack().as.number;
+        pushStack(NUMBER_VAL(fmod(a, b)));
+        break;
+      }
       default:
         break;
     }

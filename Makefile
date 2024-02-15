@@ -1,7 +1,7 @@
 all: main
 
 CC = clang
-override CFLAGS += -g -pthread
+override CFLAGS += -g -pthread -lm
 
 SRC=$(wildcard *.c)
 

@@ -2,6 +2,8 @@
 
 #include "common.h"
 
+typedef struct String String;
+
 typedef enum {
   VAL_BOOLEAN,
   VAL_NUMBER,
@@ -13,7 +15,7 @@ typedef struct {
   union {
     bool boolean;
     double number;
-    char* string;
+    String* string;
   } as;
 } Value;
 
@@ -34,3 +36,6 @@ void appendValueArray(ValueArray* valueArray, Value value);
 void freeValueArray(ValueArray* valueArray);
 
 void printValue(Value value);
+
+bool isFalsy(Value value);
+bool valuesEqual(Value a, Value b);

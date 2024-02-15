@@ -2,6 +2,7 @@
 #include "compiler.h"
 #include "scanner.h"
 #include "chunk.h"
+#include "strobj.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -24,6 +25,7 @@ typedef enum {
   PREC_STORE,
   PREC_OR,
   PREC_AND,
+  PREC_EQUALITY,
   PREC_RELATIONAL,
   PREC_ADD,
   PREC_MUL,
@@ -135,6 +137,12 @@ static void number() {
   emitByte(makeConstant(NUMBER_VAL(value)));
 }
 
+static void string() {
+  emitByte(OP_CONSTANT);
+  // Strip off the starting/ending quotes
+  emitByte(makeConstant(STRING_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2))));
+}
+
 static void boolean() {
   // Booleans are ops rather than vals at this stage for efficiency
   emitByte(parser.previous.type == TOKEN_TRUE ? OP_TRUE : OP_FALSE);
@@ -170,6 +178,26 @@ static void binary() {
     case TOKEN_MINUS: emitByte(OP_SUBTRACT); break;
     case TOKEN_STAR: emitByte(OP_MULTIPLY); break;
     case TOKEN_SLASH: emitByte(OP_DIVIDE); break;
+    case TOKEN_MOD: emitByte(OP_MOD); break;
+    
+    case TOKEN_AND: emitByte(OP_AND); break;
+    case TOKEN_OR: emitByte(OP_OR); break;
+    
+    case TOKEN_EQUAL: emitByte(OP_EQUAL); break;
+    case TOKEN_BANG_EQUAL:
+      emitByte(OP_EQUAL);
+      emitByte(OP_NOT);
+      break;
+    case TOKEN_LESS: emitByte(OP_LESS); break;
+    case TOKEN_GREATER: emitByte(OP_GREATER); break;
+    case TOKEN_LESS_EQUAL:
+      emitByte(OP_GREATER);
+      emitByte(OP_NOT);
+      break;
+    case TOKEN_GREATER_EQUAL:
+      emitByte(OP_LESS);
+      emitByte(OP_NOT);
+      break;
     default: return;
   }
 }
@@ -183,26 +211,29 @@ static void parens() {
 
 ParseRule rules[] = {
   [TOKEN_LPAREN] = {parens, NULL, PREC_NONE},
-  [TOKEN_EQUAL] = {NULL, NULL, PREC_NONE},
+  
   [TOKEN_PLUS] = {NULL, binary, PREC_ADD},
   [TOKEN_MINUS] = {unary, binary, PREC_ADD},
   [TOKEN_STAR] = {NULL, binary, PREC_MUL},
   [TOKEN_SLASH] = {NULL, binary, PREC_MUL},
-  [TOKEN_LESS] = {NULL, NULL, PREC_NONE},
-  [TOKEN_GREATER] = {NULL, NULL, PREC_NONE},
+  [TOKEN_MOD] = {NULL, binary, PREC_MUL},
 
-  [TOKEN_BANG_EQUAL] = {NULL, NULL, PREC_NONE},
-  [TOKEN_LESS_EQUAL] = {NULL, NULL, PREC_NONE},
-  [TOKEN_GREATER_EQUAL] = {NULL, NULL, PREC_NONE},
-  [TOKEN_LESS_DASH] = {NULL, NULL, PREC_NONE},
+  [TOKEN_BANG_EQUAL] = {NULL, binary, PREC_EQUALITY},
+  [TOKEN_EQUAL] = {NULL, binary, PREC_EQUALITY},
+
+  [TOKEN_LESS] = {NULL, binary, PREC_RELATIONAL},
+  [TOKEN_GREATER] = {NULL, binary, PREC_RELATIONAL},
+  [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_RELATIONAL},
+  [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_RELATIONAL},
+  [TOKEN_LESS_DASH] = {NULL, binary, PREC_RELATIONAL},
 
   [TOKEN_IDENT] = {NULL, NULL, PREC_NONE},
-  [TOKEN_STRING] = {NULL, NULL, PREC_NONE},
+  [TOKEN_STRING] = {string, NULL, PREC_NONE},
   // Prefix because this is parsed in the prefix stage
   [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
 
-  [TOKEN_AND] = {NULL, NULL, PREC_NONE},
-  [TOKEN_OR] = {NULL, NULL, PREC_NONE},
+  [TOKEN_AND] = {NULL, binary, PREC_AND},
+  [TOKEN_OR] = {NULL, binary, PREC_OR},
   [TOKEN_NOT] = {unary, NULL, PREC_NONE},
 
   [TOKEN_TRUE] = {boolean, NULL, PREC_NONE},

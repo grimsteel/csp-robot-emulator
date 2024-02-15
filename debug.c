@@ -26,6 +26,10 @@ void disassemble(Chunk* chunk, const char* label) {
 
 // Returns the new offset (because some instructions might take multiple bytes)
 int disassembleInstruction(Chunk* chunk, int offset) {
+#define SINGLE(instruction) \
+  case instruction: \
+    return singleInstruction(#instruction, offset)
+
   printf("%04d ", offset);
 
   // Same line as previous
@@ -39,26 +43,25 @@ int disassembleInstruction(Chunk* chunk, int offset) {
   switch (instruction) {
     case OP_CONSTANT:
       return constantInstruction("OP_CONSTANT", chunk, offset);
-    case OP_RETURN:
-      return singleInstruction("OP_RETURN", offset);
-    case OP_NEGATE:
-      return singleInstruction("OP_NEGATE", offset);
-    case OP_TRUE:
-      return singleInstruction("OP_TRUE", offset);
-    case OP_FALSE:
-      return singleInstruction("OP_FALSE", offset);
-    case OP_NOT:
-      return singleInstruction("OP_NOT", offset);
-    case OP_ADD:
-      return singleInstruction("OP_ADD", offset);
-    case OP_SUBTRACT:
-      return singleInstruction("OP_SUBTRACT", offset);
-    case OP_MULTIPLY:
-      return singleInstruction("OP_MULTIPLY", offset);
-    case OP_DIVIDE:
-      return singleInstruction("OP_DIVIDE", offset);
+    SINGLE(OP_RETURN);
+    SINGLE(OP_NEGATE);
+    SINGLE(OP_TRUE);
+    SINGLE(OP_FALSE);
+    SINGLE(OP_EQUAL);
+    SINGLE(OP_LESS);
+    SINGLE(OP_GREATER);
+    SINGLE(OP_AND);
+    SINGLE(OP_OR);
+    SINGLE(OP_NOT);
+    SINGLE(OP_ADD);
+    SINGLE(OP_SUBTRACT);
+    SINGLE(OP_MULTIPLY);
+    SINGLE(OP_DIVIDE);
+    SINGLE(OP_MOD);
     default:
       printf("Unknown opcode: %d\n", instruction);
       return offset + 1;
   }
+
+#undef SINGLE
 }
