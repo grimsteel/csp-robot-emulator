@@ -1,5 +1,5 @@
 #include "value.h"
-#include "strobj.h"
+#include "object.h"
 #include "mem.h"
 
 #include <stdio.h>
@@ -35,8 +35,8 @@ void printValue(Value value) {
     case VAL_NUMBER:
       printf("%g", value.as.number);
       break;
-    case VAL_STRING:
-      printf("%s", value.as.string->chars);
+    case VAL_OBJECT:
+      printObject(value.as.object);
       break;
   }
 }
@@ -47,8 +47,8 @@ bool isFalsy(Value value) {
       return value.as.number == 0.0;
     case VAL_BOOLEAN:
       return value.as.boolean == false;
-    case VAL_STRING:
-      return value.as.string->length == 0;
+    case VAL_OBJECT:
+      return objIsFalsy(value.as.object);
   }
 }
 
@@ -60,10 +60,7 @@ bool valuesEqual(Value a, Value b) {
       return a.as.number == b.as.number;
     case VAL_BOOLEAN:
       return a.as.boolean == b.as.boolean;
-    case VAL_STRING: {
-      String* aString = a.as.string;
-      String* bString = b.as.string;
-      return aString->length == bString->length && memcmp(aString->chars, bString->chars, aString->length) == 0;
-    }
+    case VAL_OBJECT:
+      return objectsEqual(a.as.object, b.as.object);
   }
 }

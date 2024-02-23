@@ -2,12 +2,13 @@
 
 #include "common.h"
 
+typedef struct Obj Obj;
 typedef struct String String;
 
 typedef enum {
   VAL_BOOLEAN,
   VAL_NUMBER,
-  VAL_STRING
+  VAL_OBJECT
 } ValueType;
 
 typedef struct {
@@ -15,14 +16,14 @@ typedef struct {
   union {
     bool boolean;
     double number;
-    String* string;
+    Obj* object;
   } as;
 } Value;
 
 // Macros for quickly creating Values
 #define BOOLEAN_VAL(value) ((Value){VAL_BOOLEAN, {.boolean = value}})
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
-#define STRING_VAL(value) ((Value){VAL_STRING, {.string = value}})
+#define OBJECT_VAL(value) ((Value){VAL_OBJECT, {.object = value}})
 
 // Dynamic array of values
 typedef struct {

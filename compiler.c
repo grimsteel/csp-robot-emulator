@@ -2,7 +2,8 @@
 #include "compiler.h"
 #include "scanner.h"
 #include "chunk.h"
-#include "strobj.h"
+#include "object.h"
+#include "mem.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -59,7 +60,7 @@ static void errorAt(Token* token, const char* message) {
   fprintf(stderr, "[line %d] Error", token->line);
 
   if (token->type == TOKEN_EOF) {
-    fprintf(stderr, "at end");
+    fprintf(stderr, " at end");
   } else if (token->type == TOKEN_ERROR) {
     // error tokens have no length
   } else {
@@ -139,8 +140,38 @@ static void number() {
 
 static void string() {
   emitByte(OP_CONSTANT);
-  // Strip off the starting/ending quotes
-  emitByte(makeConstant(STRING_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2))));
+  // Strip off the starting/ending quotes and handle escapes
+  const char* start = parser.previous.start + 1;
+  int length = parser.previous.length - 2;
+  // Points right after the end
+  const char* end = start + length * sizeof(char);
+
+  // The max we'll need is length + 1
+  char* heapBytes = ALLOCATE(char, length + 1);
+  // Iterate through and look for escapes
+  const char* currentIn = start;
+  char* currentOut = heapBytes;
+
+  for (; currentIn < end; currentIn++, currentOut++) {
+    if (*currentIn == '\\') {
+      // See what escape char it is
+      switch (*++currentIn) {
+        case 'n': *currentOut = '\n'; break;
+        case 'r': *currentOut = '\r'; break;
+        case 'b': *currentOut = '\b'; break;
+        default: *currentOut = *currentIn;
+      }
+    } else {
+      // Normal char
+      *currentOut = *currentIn;
+    }
+  }
+
+  int resultantLength = currentOut - heapBytes;
+  heapBytes = GROW_ARRAY(char, heapBytes, length + 1, resultantLength + 1);
+  heapBytes[resultantLength] = '\0';
+  String* resultantString = allocateString(heapBytes, resultantLength);
+  emitByte(makeConstant(OBJECT_VAL((Obj*) resultantString)));
 }
 
 static void boolean() {

@@ -3,6 +3,8 @@
 #include "value.h"
 #include "debug.h"
 #include "compiler.h"
+#include "object.h"
+#include "mem.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
@@ -15,10 +17,11 @@ static void resetStack() {
 
 void initVM() {
   resetStack();
+  vm.objects = NULL;
 }
 
 void freeVM() {
-
+  freeObjects();
 }
 
 /// Return value without popping
@@ -110,7 +113,27 @@ static InterpretResult run() {
         pushStack(BOOLEAN_VAL(valuesEqual(a, b)));
         break;
       }
-      case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
+      case OP_ADD: {
+        Value b = peek(0);
+        Value a = peek(1);
+        if (a.type == VAL_NUMBER && b.type == VAL_NUMBER) {
+          // Both numbers - add
+          popStack();
+          popStack();
+          pushStack(NUMBER_VAL(a.as.number + b.as.number));
+        } else if (a.type == VAL_OBJECT && a.as.object->type == OBJ_STRING) {
+          // String concatenation - b can be anything
+          popStack();
+          popStack();
+          String* bString = toString(b);
+          String* concatenated = concatStrings((String*) a.as.object, bString);
+          pushStack(OBJECT_VAL((Obj*) concatenated));
+        } else {
+          runtimeError("Invalid operand types for '+'");
+          return INTERPRET_RUNTIME_ERR;
+        }
+        break;
+      }
       case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
       case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
